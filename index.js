@@ -72,7 +72,7 @@ const renderChart = (dummyData) => {
 
 
 
-    const g = svg.append('g') //creates a group with all "g" elements UNKNOWN
+    const g = svg.append('g') //creates a group with all "g" elements
         .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
 
@@ -101,7 +101,7 @@ const renderChart = (dummyData) => {
         .scale(yScale) //sets the scale to the previously created y scale
 
 
-    const xAxisG = g.append('g') //creates the x-axis group UNKNOWN why are we appending 'g'
+    const xAxisG = g.append('g') //creates the x-axis group
         .style('clip-path', 'url(#clip)')
         .attr("class", "x-axis")
         .call(xAxis) //executes the xAxis function and adds it to the group
