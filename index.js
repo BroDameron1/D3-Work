@@ -160,32 +160,3 @@ const renderChart = (dummyData) => {
 
 
 renderChart(dummyData) //renders the full chart, passes in the dummy data
-
-//function for translating interpolated numbers to base 10 numbers
-// const j = (day) => {
-//     const value = day - 1 / (365 - 1)
-//     return Math.round(value)
-// }
-//day - a / (b - a) = t
-
-//creates the available dates as an array of objects with numbers (not strings)
-// const createDateObject = () => {
-//     const firstYear = 0 //sets starting year on timeline as a negative number
-//     const lastYear = 1 //sets ending yearing on timeline as a positive number
-//     const numberOfDays = 25
-
-//     let dateArray = []
-
-//     for (let year = firstYear; year <= lastYear; year++) {
-//         for (let day = 1; day <=numberOfDays; day++) {
-//             const fullDate = {
-//                 year: year.toString(),
-//                 day: day.toString()
-//             }
-//             dateArray.push(fullDate)
-//         }
-//     }
-//     return dateArray
-// }
-
-//const domainRange = createDateObject()
