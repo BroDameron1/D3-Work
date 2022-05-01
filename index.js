@@ -40,7 +40,7 @@ const renderChart = (dummyData) => {
     const yValue = d => d.height //takes each data point height attribute and sets it to yValue
 
     const xScale = d3.scaleLinear() //call the scaleBand function due to using an array of strings
-        .domain([0, 10]) //the domain is all entries for the x axis, in this case every year/day
+        .domain([0, 20]) //the domain is all entries for the x axis, in this case every year/day
         .range([0, innerWidth]) //sets the width of the scale within the canvas, in this from zero location to the total inner width
 
 
@@ -50,7 +50,7 @@ const renderChart = (dummyData) => {
 
 
 
-    const svg = d3.select('svg')  //creates a selection of the svg element and assigns it svg variable TODO: Use viewbox here?
+    const svg = d3.select('svg')  //creates a selection of the svg element and assigns it svg variable
         .attr("width", width) //sets the width to the width 
         .attr("height", height) //sets the height to the height variable
 
@@ -62,7 +62,7 @@ const renderChart = (dummyData) => {
 
 
     const zoom = d3.zoom()
-        .scaleExtent([.01, 8])
+        .scaleExtent([1, 8])
         .translateExtent([
             [0, 0],
             [xScale(totalYears), 0]
