@@ -38,16 +38,9 @@ export const dummyData = [
     {
         year: 20,
         day: 180,
-        height: 3,
+        height: 1,
         critical: false
     },
-    {
-        title: 'final',
-        year: 100,
-        day: 365,
-        height: 3,
-        critical: false
-    }
 ]
  
 export const convertToString = (dateData) => {

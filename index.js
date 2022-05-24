@@ -1,17 +1,13 @@
 import { dummyData } from "./dummydata.js"
 
+let xLocation
 
 const renderChart = (dummyData) => {
 
     const totalYears = 100
     const zeroYear = 5
     const daysPerYear = 365
-    let defaultDomain = 10
-
-
-    //variables for setting the height and width of the chart.  Maybe pull the height and width from the html.
-    const height = 500
-    const width = 1200
+    let dataHolder = null //used to hold div data on a mouseover
 
     //sets the margins around the chart group.  This allows space for the labeling on the x and y axis
     const margin = {
@@ -22,9 +18,12 @@ const renderChart = (dummyData) => {
 
     }
 
+    let svgWidth = window.innerWidth
+    let svgHeight = window.innerHeight / 2.3
+
     //variables that calculate the height and width inside the margins
-    const innerWidth = width - margin.left - margin.right
-    const innerHeight = height - margin.top - margin.bottom
+    const innerWidth = svgWidth - margin.left - margin.right
+    const innerHeight = svgHeight - margin.top - margin.bottom
 
 
 
@@ -39,8 +38,9 @@ const renderChart = (dummyData) => {
 
     const yValue = d => d.height //takes each data point height attribute and sets it to yValue
 
+
     const xScale = d3.scaleLinear() //call the scaleBand function due to using an array of strings
-        .domain([0, 20]) //the domain is all entries for the x axis, in this case every year/day
+        .domain(xLocation || [0,10]) //the domain is all entries for the x axis, in this case every year/day
         .range([0, innerWidth]) //sets the width of the scale within the canvas, in this from zero location to the total inner width
 
 
@@ -50,9 +50,13 @@ const renderChart = (dummyData) => {
 
 
 
-    const svg = d3.select('svg')  //creates a selection of the svg element and assigns it svg variable
-        .attr("width", width) //sets the width to the width 
-        .attr("height", height) //sets the height to the height variable
+    d3.select('svg').remove()
+
+    const svg = d3.select('#timeline-container')
+        .append('svg')
+            .attr('width', svgWidth)
+            .attr('height', svgHeight)
+            .attr('class', 'chart')
 
     svg.append('defs').append('clipPath')
         .attr('id', 'clip')
@@ -64,11 +68,10 @@ const renderChart = (dummyData) => {
     const zoom = d3.zoom()
         .scaleExtent([1, 8])
         .translateExtent([
-            [0, 0],
+            [xScale(0), 0],
             [xScale(totalYears), 0]
           ])
         .on('zoom', zoomed)
-
 
 
 
@@ -86,19 +89,14 @@ const renderChart = (dummyData) => {
         }
     }
 
-
-
-
     //creates the x axis
     const xAxis = d3.axisBottom() //executes axisBottom function which creates an axis with the ticks on the bottom.
         .scale(xScale) //sets the scale of the axis to the previously defined xScale
-        //.tickValues(xAxisTicks)
         .tickFormat(xAxisTickFormat) //sets what the ticks looks like based on the xAxisTickFormat
-
-
 
     const yAxis = d3.axisLeft() //creates the yaxis with the ticks to the left
         .scale(yScale) //sets the scale to the previously created y scale
+
 
 
     const xAxisG = g.append('g') //creates the x-axis group
@@ -107,22 +105,14 @@ const renderChart = (dummyData) => {
         .call(xAxis) //executes the xAxis function and adds it to the group
         .attr('transform', `translate(0, ${innerHeight})`) //moves the xaxis from the top to the bottom and puts it in the previously defined margin.
 
+    // g.attr("transform", "translate(-239,281.956) scale(3.03)");
 
     const yAxisG = g.append('g').call(yAxis) //creates and executes the y-axis group
 
+    const eventDiv = d3.select("#event-div")
+        .style('clip-path', 'url(#clip)')
 
-
-    g.selectAll('circle') //selects all circles within the 'g' group
-        .data(dummyData) // accesses the data
-        .enter()  //accesses the enter function to add new data
-        .append('circle') //adds a circle for each new data point
-            .style('clip-path', 'url(#clip)')
-            .attr('cy', d => yScale(yValue(d))) //puts each circle on yaxis where it belongs
-            .attr('cx', d => xScale(xValue(d))) //puts each circle on the xaxis where it belongs
-            .attr('r', 5) //sets the radius to 5px
-            .attr('class', 'event-point') //sets the class of the circle
-
-    g.selectAll('body') //selects the body.  not sure why we have to select the body for lines
+    const eventLine = g.selectAll('body') //selects the body.  not sure why we have to select the body for lines
         .data(dummyData) //access the data
         .enter() //enters the new data
         .append('line') //creates a line for each data point
@@ -135,28 +125,142 @@ const renderChart = (dummyData) => {
             .attr('y2', innerHeight) //sets the end point of the line on the y-axis
             .attr('class', 'event-line') //sets the class of each line
 
-        svg.call(zoom)
-            .call(zoom.translateTo, xScale(zeroYear), 0)
+    const eventPoint = g.selectAll('circle') //selects all circles within the 'g' group
+        .data(dummyData) // accesses the data
+        .enter()  //accesses the enter function to add new data
+        .append('circle') //adds a circle for each new data point
+            .style('clip-path', 'url(#clip)')
+            .attr('cy', d => yScale(yValue(d))) //puts each circle on yaxis where it belongs
+            .attr('cx', d => xScale(xValue(d))) //puts each circle on the xaxis where it belongs
+            .attr('r', 5) //sets the radius to 5px
+            .style("stroke","transparent")
+            .style("stroke-width","30px")
+            .attr('class', 'event-point') //sets the class of the circle
+            .on('mouseenter', onMouseOver)
+            .on('mouseleave', onMouseLeave)
 
+
+
+
+
+    svg.call(zoom)
+        //.call(zoom.translateTo, xScale(zeroYear), 0)
 
     function zoomed(event) {
+
         const updateX = event.transform.rescaleX(xScale)
-
         const zx = xAxis.scale(updateX)
+
+
         xAxisG.call(zx)
+            .selectAll(".tick")
+            .filter(e => e % 1)
+            .remove();
 
-
-        
-        svg.selectAll('.event-point')
+        eventPoint
             .attr('cx', d => updateX(xValue(d)))
+            .on('mouseenter', function(e, d) {
+                const divWidth = document.querySelector('#event-div').offsetWidth;
+                eventDiv
+                    // .style('opacity', 1)
+                    .style('visibility', 'visible')
+                    .style('transform', `translate(${updateX(xValue(d)) - ((divWidth - margin.left * 2) / 2)}px,${yScale(d.height) - 40}px)`)
 
-        svg.selectAll('.event-line')
+                dataHolder = d
+            })
+            .on('mouseleave', onMouseLeave)
+
+
+        eventLine
             .attr('x1', d => updateX(xValue(d)))
             .attr('x2', d => updateX(xValue(d)))
 
 
+        if (dataHolder) {
+            const divWidth = document.querySelector('#event-div').offsetWidth;
+            eventDiv
+                .style('transform', `translate(${updateX(xValue(dataHolder)) - ((divWidth - margin.left*2) / 2)}px,${yScale(dataHolder.height) - 40}px)`)
         }
+    }
+
+    // function unfade(element) {
+    //     var op = 0.1;  // initial opacity
+    //     element.style.display = 'block';
+    //     var timer = setInterval(function () {
+    //         if (op >= 1){
+    //             clearInterval(timer);
+    //         }
+    //         element.style.opacity = op;
+    //         element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+    //         op += op * 0.1;
+    //     }, 10);
+    // }
+
+
+    // function fade(element) {
+    //     var op = 1;  // initial opacity
+    //     var timer = setInterval(function () {
+    //         if (op <= 0.1){
+    //             clearInterval(timer);
+    //             element.style.display = 'none';
+    //         }
+    //         element.style.opacity = op;
+    //         element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+    //         op -= op * 0.1;
+    //     }, 50);
+    // }
+    
+
+    function onMouseOver(event, d) {
+
+        eventDiv
+            .text(['test dasdasd dasdasd'])
+
+        const divWidth = document.querySelector('#event-div').offsetWidth;
+
+        eventDiv
+            .style('transform', `translate(${xScale(xValue(d)) - ((divWidth - margin.left * 2) / 2)}px,${yScale(d.height) - 40}px)`)
+            .transition()
+            .duration(750)
+            .style('opacity', 1)
+            .style('visibility', 'visible')
+
+        // const eventDivElement = document.querySelector('#event-div')
+        
+        // unfade(eventDivElement)
+
+        dataHolder = d
+    }
+
+    function onMouseLeave() {
+
+        // const eventDivElement = document.querySelector('#event-div')
+
+        // fade(eventDivElement)
+
+        eventDiv
+            .transition()
+            .duration(750)
+            .style('opacity', 0)
+            //.style('visibility', 'hidden')
+
+        setTimeout(function() {
+            eventDiv
+                .style('visibility', 'hidden')
+        }, 750)
+        
+
+        dataHolder = null
+    }
+
+
+
 }
 
 
 renderChart(dummyData) //renders the full chart, passes in the dummy data
+
+window.addEventListener('resize', function(event){
+    renderChart(dummyData)
+})
+
